@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       zap:
-        image: owasp/zap2docker-stable
+        image: ghcr.io/zaproxy/zaproxy:stable
         ports:
           - 8080:8080
         options: >-
