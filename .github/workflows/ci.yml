@@ -1,0 +1,44 @@
+name: Security Scan with OWASP ZAP
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 8 * * *'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      zap:
+        image: owasp/zap2docker-stable
+        ports:
+          - 8080:8080
+        options: >-
+          --health-cmd "curl -f http://localhost:8080 || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        env:
+          ZAP_API_KEY: test123
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      - name: Run security test
+        run: pytest --html=reports/report.html --self-contained-html
+        env:
+          ZAP_HOST: localhost
+          ZAP_PORT: 8080
+          ZAP_API_KEY: test123
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: reports/
