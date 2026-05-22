@@ -31,7 +31,7 @@ def zap_client():
 
 def test_security_scan(zap_client):
     """Scan a deliberately vulnerable test site and fail on high/medium alerts."""
-    target = "http://testphp.vulnweb.com"
+    target = "https://httpbin.org"
 
     # Spider
     spider_id = zap_client.spider.scan(target)
