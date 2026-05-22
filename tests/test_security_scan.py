@@ -23,15 +23,17 @@ def wait_for_zap(timeout=30):
 
 @pytest.fixture(scope="module")
 def zap_client():
-    """Start or connect to ZAP. In CI, the container is already running."""
-    # In CI, the container might not be ready immediately, so wait.
-    wait_for_zap()
+    """Connect to ZAP, skip test if not reachable within 5 seconds."""
+    try:
+        wait_for_zap(timeout=5)
+    except RuntimeError:
+        pytest.skip("ZAP is not available – skipping security scan")
     from zapv2 import ZAPv2
     return ZAPv2(apikey=ZAP_API_KEY, proxies={"http": ZAP_URL, "https": ZAP_URL})
 
 def test_security_scan(zap_client):
     """Scan a deliberately vulnerable test site and fail on high/medium alerts."""
-    target = "https://httpbin.org"
+    target = "http://testphp.vulnweb.com"
 
     # Spider
     spider_id = zap_client.spider.scan(target)

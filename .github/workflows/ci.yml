@@ -14,9 +14,9 @@ jobs:
         image: ghcr.io/zaproxy/zaproxy:stable
         ports:
           - 8080:8080
-        # Start ZAP in daemon mode with an API key, listen on all interfaces
+        # Correct command: only pass arguments to the default entrypoint (zap.sh)
         options: >-
-          -- zap.sh -daemon -port 8080 -host 0.0.0.0
+          -- -daemon -port 8080 -host 0.0.0.0
           -config api.key=test123
           -config api.addrs.addr.name=.*
           -config api.addrs.addr.regex=true
