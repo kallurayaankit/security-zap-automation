@@ -13,15 +13,9 @@ jobs:
     services:
       zap:
         image: ghcr.io/zaproxy/zaproxy:stable
-        ports:
-          - 8080:8080
-        # ZAP is configured via environment variables – no custom command needed
-        env:
-          ZAP_PORT: 8080
-          ZAP_HOST: 0.0.0.0
-          ZAP_API_KEY: test123
-          ZAP_API_ADDRS_ADDR_NAME: ".*"
-          ZAP_API_ADDRS_ADDR_REGEX: "true"
+        options: >-
+          -p 8080:8080
+          -- -daemon -port 8080 -host 0.0.0.0 -config api.key=test123 -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
 
     steps:
       - name: Check out repository
@@ -38,7 +32,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Wait for ZAP to start
-        run: sleep 10
+        run: sleep 15
 
       - name: Run security scan
         run: pytest
