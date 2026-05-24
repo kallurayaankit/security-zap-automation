@@ -10,13 +10,6 @@ jobs:
   security-scan:
     runs-on: ubuntu-latest
 
-    services:
-      zap:
-        image: ghcr.io/zaproxy/zaproxy:stable
-        options: >-
-          -p 8080:8080
-          -- -daemon -port 8080 -host 0.0.0.0 -config api.key=test123 -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -31,12 +24,28 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Wait for ZAP to start
+      # --- ZAP is started manually, NOT as a service ---
+      - name: Start ZAP daemon
+        run: |
+          docker run -d --name zap \
+            -p 8080:8080 \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap.sh -daemon -port 8080 -host 0.0.0.0 \
+            -config api.key=test123 \
+            -config api.addrs.addr.name=.* \
+            -config api.addrs.addr.regex=true
+
+      - name: Wait for ZAP to be ready
         run: sleep 15
 
       - name: Run security scan
         run: pytest
         env:
-          ZAP_ADDRESS: zap
+          ZAP_ADDRESS: localhost   # because ZAP runs on the same host now
           ZAP_PORT: 8080
           ZAP_API_KEY: test123
+
+      # Clean up the container no matter what
+      - name: Stop ZAP
+        if: always()
+        run: docker stop zap && docker rm zap
