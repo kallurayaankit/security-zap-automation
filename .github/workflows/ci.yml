@@ -1,43 +1,50 @@
-name: Security Scan with OWASP ZAP
+name: Security Test Automation with OWASP ZAP
 
 on:
   push:
     branches: [ main ]
-  schedule:
-    - cron: '0 8 * * *'
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  test:
+  security-scan:
     runs-on: ubuntu-latest
+
+    # The ZAP service container – fixed!
     services:
       zap:
         image: ghcr.io/zaproxy/zaproxy:stable
-        ports:
-          - 8080:8080
-        # Correct command: only pass arguments to the default entrypoint (zap.sh)
         options: >-
-          -- -daemon -port 8080 -host 0.0.0.0
-          -config api.key=test123
-          -config api.addrs.addr.name=.*
-          -config api.addrs.addr.regex=true
+          -p 8080:8080
+          -e GITHUB_ACTIONS=true
+          -e CI=true
+          -- -daemon -port 8080 -host 0.0.0.0 -config api.key=test123 -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
+
     steps:
-      - uses: actions/checkout@v4
+      # 1. Get your code
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # 2. Install Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      # 3. Install your project dependencies (pytest, zaproxy, etc.)
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Run security test
-        run: pytest --html=reports/report.html --self-contained-html
+
+      # 4. Wait a few seconds so ZAP is fully ready
+      - name: Wait for ZAP to start
+        run: sleep 10
+
+      # 5. Run your tests (they connect to http://zap:8080)
+      - name: Run security scan
+        run: pytest
         env:
-          ZAP_HOST: localhost
+          ZAP_ADDRESS: zap
           ZAP_PORT: 8080
           ZAP_API_KEY: test123
-      - name: Upload security report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: security-report
-          path: reports/
