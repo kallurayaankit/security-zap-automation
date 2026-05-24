@@ -10,38 +10,33 @@ jobs:
   security-scan:
     runs-on: ubuntu-latest
 
-    # The ZAP service container – fixed!
     services:
       zap:
-        image: ghcr.io/zaproxy/zaproxy:stable
+        # ⚠️ Do NOT add an "image:" line here – the image is already in "options"
         options: >-
           -p 8080:8080
           -e GITHUB_ACTIONS=true
           -e CI=true
-          -- -daemon -port 8080 -host 0.0.0.0 -config api.key=test123 -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
+          ghcr.io/zaproxy/zaproxy:stable
+          -daemon -port 8080 -host 0.0.0.0 -config api.key=test123 -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
 
     steps:
-      # 1. Get your code
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # 2. Install Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # 3. Install your project dependencies (pytest, zaproxy, etc.)
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 4. Wait a few seconds so ZAP is fully ready
       - name: Wait for ZAP to start
         run: sleep 10
 
-      # 5. Run your tests (they connect to http://zap:8080)
       - name: Run security scan
         run: pytest
         env:
