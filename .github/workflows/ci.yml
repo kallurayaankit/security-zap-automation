@@ -12,13 +12,12 @@ jobs:
 
     services:
       zap:
-        # ⚠️ Do NOT add an "image:" line here – the image is already in "options"
+        image: ghcr.io/zaproxy/zaproxy:stable
         options: >-
           -p 8080:8080
           -e GITHUB_ACTIONS=true
           -e CI=true
-          ghcr.io/zaproxy/zaproxy:stable
-          -daemon -port 8080 -host 0.0.0.0 -config api.key=test123 -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
+          -- -daemon -port 8080 -host 0.0.0.0 -config api.key=test123 -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
 
     steps:
       - name: Check out repository
